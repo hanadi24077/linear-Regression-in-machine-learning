@@ -1,0 +1,95 @@
+#hanadi absulrahem alsulami - computer sciences - FCIT - KAU - KSA
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import seaborn as sns
+
+#Load the dataset from CSV file. 
+insuran = pd.read_csv('insurance.csv')
+insuran.head(5)
+
+
+##### Impute any missing value and convert categorical values to numerical
+insurance = insuran.fillna(0)
+
+
+insurance['sex'] = insurance['sex'].apply({'male':0,'female':1}.get) 
+insurance['smoker'] = insurance['smoker'].apply({'yes':1,'no':0}.get)
+insurance['region'] = insurance['region'].apply({'southwest':1,'southeast':2,'northwest':3,'northeast':4}.get)
+
+# features
+x = insurance[['age', 'sex', 'bmi', 'children','smoker','region']]
+# predicted variable
+y = insurance['charges']
+
+scaler = StandardScaler()
+x_scaler = scaler.fit_transform(x)
+x_reduced = PCA (n_components = 6).fit_transform(x_scaler)
+
+
+
+##### Divide the dataset into training and testing (use splitting ratio 80:20).
+
+X_train, X_test, y_train, y_test = train_test_split(x_reduced, y, test_size=0.2)
+
+
+
+w_ = np.zeros(X_train.shape[1])
+
+
+print(w_)
+
+##### Train a linear regression model using a gradient descent algorithm
+
+def batch_gradient_descent(x, y, w_, alpha, iterations):
+    cost_ = []
+    m = x.shape[0]
+    
+    
+    for _ in range(iterations):
+            y_pred = np.dot(x, w_)
+            loss = y_pred - y
+            gradient_vector = np.dot(x.T,loss)
+            w_ -= ((alpha / m) * gradient_vector)
+            cost = np.sum((loss ** 2)) / (2 * m)
+            print('iteration : ',_,'cost: ',cost)
+            cost_.append(cost)
+    return w_,cost_
+
+
+def predict(w_, x):
+     return np.dot(x, w_)
+
+    
+alpha = 0.01
+iterations = 10
+cost=[]
+w,cost = batch_gradient_descent(X_train, y_train, w_, alpha, iterations)
+print(w)
+
+#### Test the performance of the model by computing and reporting the MSE on the testing set
+y_=predict(w, X_test)
+
+print(y_)
+
+MSE = np.square(np.subtract(y_test,y_)).mean() 
+print('mean seqaure error',MSE)
+
+#plot the cost at each iteration against iterations.
+plt.plot(list(range(iterations)), cost)
+plt.xlabel('iteration')
+plt.ylabel('cost')
+plt.title('alpha= 0.01')
+plt.show()
+
+##finding out the most signficant featuer
+
+plt.figure(figsize=(6,6))
+sns.heatmap(insurance.corr().round(2),annot=True)
+plt.show()
+
+
